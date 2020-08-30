@@ -31,7 +31,7 @@ namespace ParliamentVotes
             services.AddControllers();
 
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(
+                options.UseSqlite(
                     Configuration.GetConnectionString("DefaultConnection")));
 
             services.AddMvc().AddJsonOptions(options =>
@@ -39,6 +39,8 @@ namespace ParliamentVotes
                 options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
                 options.JsonSerializerOptions.IgnoreNullValues = true;
             });
+
+            services.AddControllersWithViews();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

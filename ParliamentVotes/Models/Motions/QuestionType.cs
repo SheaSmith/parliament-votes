@@ -22,6 +22,10 @@ namespace ParliamentVotes.Models.Motions
         /// <summary>
         /// A part of a bill, e.g. specific sections, clauses or schedules
         /// </summary>
-        BillPart
+        BillPart,
+        /// <summary>
+        /// An amendment moved outside of the SOP process
+        /// </summary>
+        Amendment
     }
 }

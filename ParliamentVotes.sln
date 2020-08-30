@@ -1,8 +1,6 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
-VisualStudioVersion = 16.0.29609.76
-MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParliamentVotes", "ParliamentVotes\ParliamentVotes.csproj", "{391A6D23-7852-464F-8C9A-3408EE468DFF}"
 EndProject
 Global
@@ -15,11 +13,5 @@ Global
 		{391A6D23-7852-464F-8C9A-3408EE468DFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{391A6D23-7852-464F-8C9A-3408EE468DFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{391A6D23-7852-464F-8C9A-3408EE468DFF}.Release|Any CPU.Build.0 = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {69406DAE-3612-47E9-95AB-8D1BBF3FDC4D}
 	EndGlobalSection
 EndGlobal

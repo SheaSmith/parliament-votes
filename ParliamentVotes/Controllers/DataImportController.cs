@@ -16,10 +16,13 @@ using ParliamentVotes.ViewModels;
 
 namespace ParliamentVotes.Controllers
 {
+
     [Route("private-api/import")]
     [ApiController]
     public class DataImportController : ControllerBase
     {
+        private static string[] emptyMotions = new string[] { "That the amendment be agreed to.", "That the amendments be agreed to.", "That the amendments to the amendments be agreed to.", "That the amendment to the amendments be agreed to.", "That the amendment to the amendment be agree to.", "That the amendments to the amendment be agreed to.", "That the motion be agreed to." };
+
         private ApplicationDbContext db;
 
         public DataImportController(ApplicationDbContext db)
@@ -202,6 +205,7 @@ namespace ParliamentVotes.Controllers
             string questionTitle = null;
             string questionSubtitle = null;
             string questionDescription = null;
+            string questionSubSubTitle = null;
 
             List<Question> newQuestions = new List<Question>();
 
@@ -224,26 +228,32 @@ namespace ParliamentVotes.Controllers
                     if (questionTitle != newQuestionTitle && questionSubtitle != null)
                     {
                         questionSubtitle = null;
+                        questionSubSubTitle = null;
                     }
 
                     questionTitle = newQuestionTitle;
                 }
 
+                var subdebate = debate.QuerySelector(".SubDebate");
+
+                if (subdebate == null)
+                    subdebate = debate.QuerySelector(".SubDebatealone");
+
+                if (subdebate != null)
+                {
+                    questionSubtitle = subdebate.TextContent.Trim();
+
+                    if (questionSubtitle.Contains("Reading"))
+                        questionSubtitle = null;
+                }
+
+                var marginHeading = debate.QuerySelector(".MarginHeading");
+
+                if (marginHeading != null)
+                    questionSubSubTitle = marginHeading.TextContent;
+
                 if (debate.TextContent.Contains("I move") || debate.TextContent.Contains("The question now is") || debate.TextContent.Contains("The question was put that"))
                 {
-                    var subdebate = debate.QuerySelector(".SubDebate");
-
-                    if (subdebate == null)
-                        subdebate = debate.QuerySelector(".SubDebatealone");
-
-                    if (subdebate != null)
-                    {
-                        questionSubtitle = subdebate.TextContent.Trim();
-
-                        if (questionSubtitle.Contains("Reading"))
-                            questionSubtitle = null;
-                    }
-
                     var speechNode = debate.QuerySelector(".Speech");
 
                     IHtmlCollection<IElement> speech = null;
@@ -285,13 +295,13 @@ namespace ParliamentVotes.Controllers
                 // Find all voice votes
                 var voiceVotes = debate.QuerySelectorAll(".IndentMarginalone");
 
-                if (voiceVotes != null && questionDescription != null && questionTitle != null)
+                if (voiceVotes != null && questionTitle != null)
                 {
                     foreach (var voiceVote in voiceVotes)
                     {
                         var text = voiceVote.TextContent;
 
-                        if ((text.Contains("Bill read a ") && text.Contains(" time.")) || text.Contains("Motion agreed to") || text.Contains("Question agreed to") || text.Contains("Motion not agreed to"))
+                        if ((text.Contains("Bill read a ") && text.Contains(" time.")) || text.Contains("agreed to"))
                         {
                             var question = db.Questions.FirstOrDefault(q => q.Timestamp == sittingDate && q.QuestionTitle == questionTitle && q.QuestionDescription == questionDescription && q.QuestionSubtitle == questionSubtitle);
 
@@ -306,7 +316,7 @@ namespace ParliamentVotes.Controllers
                                 newQuestions.Add(question);
                             }
 
-                            if (questionDescription.Contains(" read "))
+                            if (questionDescription != null && questionDescription.Contains(" read "))
                             {
                                 int endIndex = questionDescription.IndexOf(" be now read");
                                 questionTitle = questionDescription.Substring(0, endIndex).Replace("That the ", "").Trim();
@@ -324,6 +334,36 @@ namespace ParliamentVotes.Controllers
                                 question.QuestionType = QuestionType.Motion;
                             }
 
+                            if (questionSubtitle != null && questionSubtitle.ToLower().Contains("committee"))
+                            {
+                                question.Stage = Stage.Committee;
+                                question.QuestionType = QuestionType.BillPart;
+
+                                questionSubtitle = questionSubSubTitle;
+
+                                if (questionDescription != null && questionDescription.Contains("Supplementary Order Paper"))
+                                    question.QuestionType = QuestionType.SupplementaryOrderPaper;
+                                else if (questionDescription != null && questionDescription.Contains("amendment"))
+                                    question.QuestionType = QuestionType.Amendment;
+                            }
+
+                            if (text.ToLower().Contains("part") || text.ToLower().Contains("section") || text.ToLower().Contains("clause") || text.ToLower().Contains("schedule"))
+                                questionDescription = text.Replace(" not agreed to.", "").Replace(" agreed to.", "");
+
+                            if (questionDescription != null && emptyMotions.Contains(questionDescription))
+                            {
+                                var beforeNode = voiceVote.PreviousElementSibling;
+
+                                if (beforeNode != null && beforeNode.ClassList.Contains("clause"))
+                                    beforeNode = beforeNode.PreviousElementSibling;
+
+                                if (beforeNode != null && beforeNode.TextContent.Contains("The question was put that "))
+                                {
+                                    questionDescription = beforeNode.TextContent.Replace("The question was put that ", "That ");
+                                    questionDescription = questionDescription.Substring(0, questionDescription.Length - 1);
+                                }
+                            }
+
                             question.QuestionTitle = questionTitle;
                             question.QuestionSubtitle = questionSubtitle;
                             question.QuestionDescription = questionDescription;
@@ -339,6 +379,8 @@ namespace ParliamentVotes.Controllers
 
                             vote.Question = question;
                             vote.Position = !text.Contains("Motion not agreed to");
+
+                            questionDescription = null;
                         }
                     }
                 }
@@ -365,10 +407,12 @@ namespace ParliamentVotes.Controllers
                             motion = string.Join("", questionDescriptionNodes.Select(m => m.TextContent)).Trim();
                         }
 
-                        if (motion.Contains("That the amendments be agreed to") || motion.Contains("That the motion be agreed to") && questionDescription != null)
+                        if ((motion.Contains("That the amendment be agreed to") || motion.Contains("That the amendments be agreed to") || motion.Contains("That the motion be agreed to")) && questionDescription != null)
                         {
                             motion = questionDescription;
                         }
+
+
 
                         // We have a question
                         var question = db.Questions.FirstOrDefault(q => q.QuestionTitle == questionTitle && q.QuestionSubtitle == questionSubtitle && q.QuestionDescription == motion && q.Timestamp == sittingDate);
@@ -416,14 +460,32 @@ namespace ParliamentVotes.Controllers
                             }
                         }
 
-                        if (question.QuestionDescription == "That the motion be agreed to." || question.QuestionDescription == "That the ammendments be agreed to.")
+                        if (question.QuestionDescription != null && emptyMotions.Contains(question.QuestionDescription))
                         {
-                            var putQuestion = partyVotes[i].PreviousElementSibling;
+                            var beforeNode = partyVotes[i].PreviousElementSibling;
 
-                            if (putQuestion != null && putQuestion.ClassList.Contains("IndentMarginalone"))
+                            if (beforeNode != null && beforeNode.ClassList.Contains("clause"))
+                                beforeNode = beforeNode.PreviousElementSibling;
+
+                            if (beforeNode != null && beforeNode.TextContent.Contains("The question was put that "))
                             {
-                                question.QuestionSubtitle = putQuestion.TextContent.Replace("The question was put that ", "That ");
+                                question.QuestionDescription = beforeNode.TextContent.Replace("The question was put that ", "That ");
+                                question.QuestionDescription = question.QuestionDescription.Substring(0, question.QuestionDescription.Length - 1);
                             }
+                        }
+
+                        if (question.QuestionSubtitle != null && question.QuestionSubtitle.ToLower().Contains("committee"))
+                        {
+                            question.Stage = Stage.Committee;
+                            question.QuestionType = QuestionType.BillPart;
+
+                            questionSubtitle = null;
+                            question.QuestionSubtitle = questionSubSubTitle;
+
+                            if (question.QuestionDescription != null && question.QuestionDescription.Contains("Supplementary Order Paper"))
+                                question.QuestionType = QuestionType.SupplementaryOrderPaper;
+                            else if (question.QuestionDescription != null && question.QuestionDescription.Contains("amendment"))
+                                question.QuestionType = QuestionType.Amendment;
                         }
 
                         if (partyVotes[i].TextContent.Contains("party vote"))
@@ -560,6 +622,8 @@ namespace ParliamentVotes.Controllers
                                     voteElement = tableRows[++tableIndex];
                                 }
                             }
+
+                            questionDescription = null;
                         }
                     }
                 }
