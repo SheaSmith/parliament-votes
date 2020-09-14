@@ -6,16 +6,16 @@ using System.Threading.Tasks;
 
 namespace ParliamentVotes.ViewModels
 {
-    public class TenureGetModel
+    public class TenureGet
     {
-        public PartyGetModel Party { get; set; }
+        public PartyGet Party { get; set; }
         public DateTime Start { get; set; }
         public DateTime? End { get; set; }
         public string Electorate { get; set; }
 
-        public TenureGetModel(Tenure tenure)
+        public TenureGet(Tenure tenure)
         {
-            Party = new PartyGetModel(tenure.Party);
+            Party = new PartyGet(tenure.Party);
             Start = tenure.Start;
             End = tenure.End;
             Electorate = tenure.Electorate;

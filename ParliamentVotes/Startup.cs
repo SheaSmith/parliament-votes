@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ParliamentVotes.Data;
+using ParliamentVotes.Managers.DataImport;
 
 namespace ParliamentVotes
 {
@@ -31,7 +32,7 @@ namespace ParliamentVotes
             services.AddControllers();
 
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlite(
+                options.UseSqlServer(
                     Configuration.GetConnectionString("DefaultConnection")));
 
             services.AddMvc().AddJsonOptions(options =>
@@ -41,6 +42,8 @@ namespace ParliamentVotes
             });
 
             services.AddControllersWithViews();
+
+            services.AddScoped<HansardImportManager, HansardImportManager>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

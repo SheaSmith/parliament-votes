@@ -23,7 +23,7 @@ namespace ParliamentVotes.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
-            return Ok(db.Parties.Select(p => new PartyGetModel(p)));
+            return Ok(db.Parties.Select(p => new PartyGet(p)));
         }
 
         [HttpGet("{id}")]
@@ -34,7 +34,7 @@ namespace ParliamentVotes.Controllers
             if (party == null)
                 return NotFound();
 
-            return Ok(new PartyGetModel(party));
+            return Ok(new PartyGet(party));
         }
     }
 }

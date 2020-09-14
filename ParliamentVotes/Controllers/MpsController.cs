@@ -24,7 +24,7 @@ namespace ParliamentVotes.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
-            return Ok(db.Members.Include(m => m.Tenures).ThenInclude(t => t.Party).Select(m => new MemberGetModel(m)));
+            return Ok(db.Members.Include(m => m.Tenures).ThenInclude(t => t.Party).Select(m => new MemberGet(m)));
         }
 
         [HttpGet("{id}")]
@@ -35,7 +35,7 @@ namespace ParliamentVotes.Controllers
             if (member == null)
                 return NotFound();
 
-            return Ok(new MemberGetModel(member));
+            return Ok(new MemberGet(member));
         }
     }
 }

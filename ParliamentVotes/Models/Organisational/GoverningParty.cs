@@ -11,12 +11,12 @@ namespace ParliamentVotes.Models.Organisational
     public class GoverningParty
     {
         /// <summary>
-        /// The number of the parliamentary sessions
+        /// The number of the parliament
         /// </summary>
         [Required]
-        public int Session_Number { get; set; }
-        [ForeignKey("Session_Number")]
-        public virtual Session Session { get; set; }
+        public int Parliament_Number { get; set; }
+        [ForeignKey("Parliament_Number")]
+        public virtual Parliament Parliament { get; set; }
 
         /// <summary>
         /// The party that is part of the government

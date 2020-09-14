@@ -36,12 +36,21 @@ namespace ParliamentVotes.Models.Organisational
         /// <summary>
         /// An image of this member
         /// </summary>
-        [Required]
         public string ImageUrl { get; set; }
+
+        /// <summary>
+        /// The copyright that applies to this image
+        /// </summary>
+        public string ImageCopyright { get; set; }
 
         /// <summary>
         /// When this member has sat in parliament, what parties they represented, and what electorate(s) they represented
         /// </summary>
         public virtual List<Tenure> Tenures { get; set; }
+
+        /// <summary>
+        /// If the member is known as something else for personal votes (e.g. maiden name, or mistake when entering personal votes)
+        /// </summary>
+        public string AlsoKnownAs { get; set; }
     }
 }

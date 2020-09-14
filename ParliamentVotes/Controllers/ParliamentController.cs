@@ -12,11 +12,11 @@ namespace ParliamentVotes.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class SessionsController : ControllerBase
+    public class ParliamentController : ControllerBase
     {
         private ApplicationDbContext db;
 
-        public SessionsController(ApplicationDbContext db)
+        public ParliamentController(ApplicationDbContext db)
         {
             this.db = db;
         }
@@ -24,18 +24,18 @@ namespace ParliamentVotes.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
-            return Ok(db.Sessions.Include(s => s.GoverningParties).ThenInclude(g => g.Party).Select(s => new SessionGetModel(s)));
+            return Ok(db.Parliaments.Include(s => s.GoverningParties).ThenInclude(g => g.Party).Select(s => new ParliamentGet(s)));
         }
 
         [HttpGet("{number}")]
         public IActionResult GetByNumber(int number)
         {
-            var session = db.Sessions.Include(s => s.GoverningParties).ThenInclude(g => g.Party).FirstOrDefault(s => s.SessionNumber == number);
+            var parliament = db.Parliaments.Include(s => s.GoverningParties).ThenInclude(g => g.Party).FirstOrDefault(s => s.Number == number);
 
-            if (session == null)
+            if (parliament == null)
                 return NotFound();
 
-            return Ok(new SessionGetModel(session));
+            return Ok(new ParliamentGet(parliament));
         }
     }
 }

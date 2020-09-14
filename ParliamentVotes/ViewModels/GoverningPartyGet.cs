@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 
 namespace ParliamentVotes.ViewModels
 {
-    public class GoverningPartyGetModel
+    public class GoverningPartyGet
     {
-        public PartyGetModel Party { get; set; }
+        public PartyGet Party { get; set; }
         public GoverningRelationship? Relationship { get; set; }
 
-        public GoverningPartyGetModel(GoverningParty governingParty)
+        public GoverningPartyGet(GoverningParty governingParty)
         {
-            Party = new PartyGetModel(governingParty.Party);
+            Party = new PartyGet(governingParty.Party);
             Relationship = governingParty.Relationship;
         }
     }

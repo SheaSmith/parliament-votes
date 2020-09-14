@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 
 namespace ParliamentVotes.ViewModels
 {
-    public class PartyGetModel
+    public class PartyGet
     {
         public int Id { get; set; }
         public string Name { get; set; }
         public string LogoUrl { get; set; }
         public string Color { get; set; }
 
-        public PartyGetModel(Party party)
+        public PartyGet(Party party)
         {
             Id = party.Id;
             Name = party.Name;
