@@ -252,11 +252,15 @@ namespace ParliamentVotes.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
+                    b.Property<string>("BillNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FileName")
+                    b.Property<string>("DirectoryUrl")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -265,13 +269,6 @@ namespace ParliamentVotes.Migrations
 
                     b.Property<int>("Member_Id")
                         .HasColumnType("int");
-
-                    b.Property<int>("Parliament_Number")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Slug")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -283,8 +280,6 @@ namespace ParliamentVotes.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Member_Id");
-
-                    b.HasIndex("Parliament_Number");
 
                     b.ToTable("Bills");
                 });
@@ -686,12 +681,6 @@ namespace ParliamentVotes.Migrations
                     b.HasOne("ParliamentVotes.Models.Organisational.Member", "Member")
                         .WithMany()
                         .HasForeignKey("Member_Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ParliamentVotes.Models.Organisational.Parliament", "Parliament")
-                        .WithMany()
-                        .HasForeignKey("Parliament_Number")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

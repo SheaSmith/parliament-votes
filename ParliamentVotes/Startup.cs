@@ -44,6 +44,8 @@ namespace ParliamentVotes
             services.AddControllersWithViews();
 
             services.AddScoped<HansardImportManager, HansardImportManager>();
+            services.AddScoped<MembersImportManager, MembersImportManager>();
+            services.AddScoped<LegislationImportManager, LegislationImportManager>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
