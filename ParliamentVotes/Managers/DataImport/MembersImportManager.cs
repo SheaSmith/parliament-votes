@@ -118,7 +118,15 @@ namespace ParliamentVotes.Managers.DataImport
                     dateSection = partyComponents[0];
                 }
 
-                var nzst = TimeZoneInfo.FindSystemTimeZoneById("New Zealand Standard Time");
+                TimeZoneInfo nzst;
+                try
+                {
+                    nzst = TimeZoneInfo.FindSystemTimeZoneById("New Zealand Standard Time");
+                }
+                catch (TimeZoneNotFoundException)
+                {
+                    nzst = TimeZoneInfo.FindSystemTimeZoneById("Pacific/Auckland");
+                }
 
                 var dateComponents = dateSection.Split("-");
                 DateTime begin = DateTime.ParseExact(dateComponents[0].Trim(), "d MMMM yyyy", new CultureInfo("en-NZ"));
@@ -206,7 +214,15 @@ namespace ParliamentVotes.Managers.DataImport
                         var beginString = cells[2].TextContent.Trim();
 
                         DateTime begin;
-                        var nzst = TimeZoneInfo.FindSystemTimeZoneById("New Zealand Standard Time");
+                        TimeZoneInfo nzst;
+                try
+                {
+                    nzst = TimeZoneInfo.FindSystemTimeZoneById("New Zealand Standard Time");
+                }
+                catch (TimeZoneNotFoundException)
+                {
+                    nzst = TimeZoneInfo.FindSystemTimeZoneById("Pacific/Auckland");
+                }
 
                         if (beginString.Contains("-"))
                         {

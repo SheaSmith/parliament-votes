@@ -36,7 +36,15 @@ namespace ParliamentVotes.Managers.DataImport
             var context = BrowsingContext.New(config);
             var questionDocument = await context.OpenAsync(url);
 
-            var nzst = TimeZoneInfo.FindSystemTimeZoneById("New Zealand Standard Time");
+            TimeZoneInfo nzst;
+                try
+                {
+                    nzst = TimeZoneInfo.FindSystemTimeZoneById("New Zealand Standard Time");
+                }
+                catch (TimeZoneNotFoundException)
+                {
+                    nzst = TimeZoneInfo.FindSystemTimeZoneById("Pacific/Auckland");
+                }
 
             DateTime sittingDate = new DateTime();
             try
@@ -87,7 +95,16 @@ namespace ParliamentVotes.Managers.DataImport
 
         public async Task GetDifferential()
         {
-            TimeZoneInfo nzst = TimeZoneInfo.FindSystemTimeZoneById("New Zealand Standard Time");
+            TimeZoneInfo nzst;
+                try
+                {
+                    nzst = TimeZoneInfo.FindSystemTimeZoneById("New Zealand Standard Time");
+                }
+                catch (TimeZoneNotFoundException)
+                {
+                    nzst = TimeZoneInfo.FindSystemTimeZoneById("Pacific/Auckland");
+                }
+
             var lastDate = _db.Questions.OrderByDescending(q => q.Timestamp).First().Timestamp;
 
             // We want to make sure we aren't grabbing stuff that isn't quite done yet, so we'll do a 2 day delay on the import
@@ -154,7 +171,15 @@ namespace ParliamentVotes.Managers.DataImport
             string lastQuestionCommitteeTitle = null;
 
             DateTime lastDate = sittingDate;
-            TimeZoneInfo nzst = TimeZoneInfo.FindSystemTimeZoneById("New Zealand Standard Time");
+            TimeZoneInfo nzst;
+                try
+                {
+                    nzst = TimeZoneInfo.FindSystemTimeZoneById("New Zealand Standard Time");
+                }
+                catch (TimeZoneNotFoundException)
+                {
+                    nzst = TimeZoneInfo.FindSystemTimeZoneById("Pacific/Auckland");
+                }
 
             Stage? lastStage = null;
 
@@ -839,7 +864,15 @@ namespace ParliamentVotes.Managers.DataImport
             string lastQuestionCommitteeTitle = null;
 
             DateTime lastDate = sittingDate;
-            TimeZoneInfo nzst = TimeZoneInfo.FindSystemTimeZoneById("New Zealand Standard Time");
+            TimeZoneInfo nzst;
+                try
+                {
+                    nzst = TimeZoneInfo.FindSystemTimeZoneById("New Zealand Standard Time");
+                }
+                catch (TimeZoneNotFoundException)
+                {
+                    nzst = TimeZoneInfo.FindSystemTimeZoneById("Pacific/Auckland");
+                }
 
             Stage? lastStage = null;
             QuestionType lastQuestionType = QuestionType.Motion;

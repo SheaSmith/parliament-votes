@@ -61,10 +61,16 @@ namespace ParliamentVotes.Models.Legislation
         [Required]
         public string DirectoryUrl { get; set; }
 
+        /// <summary>
+        /// The year this bill was introduced
+        /// </summary>
+        [Required]
+        public int Year { get; set; }
+
         public Bill() {}
         
         public Bill(string title, string description, string billNumber, Member member, BillType billType,
-            string directoryUrl)
+            string directoryUrl, int year)
         {
             Title = title;
             Description = description;
@@ -73,6 +79,7 @@ namespace ParliamentVotes.Models.Legislation
             Type = billType;
             DirectoryUrl = directoryUrl;
             LastUpdated = DateTime.UtcNow;
+            Year = year;
         }
     }
 

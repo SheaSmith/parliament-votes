@@ -68,6 +68,12 @@ namespace ParliamentVotes.Managers.DataImport
             {
                 int year = int.Parse(yearNode.TextContent);
 
+                var donePath = Path.Combine(webHostEnvironment.ContentRootPath, "App_Data", "Bills",
+                        year.ToString(), string.Format("{0}-done.txt", billType));
+
+                if (File.Exists(donePath))
+                    continue;
+
                 await ImportBillsByYearAndType(billType, year, context);
             }
         }
@@ -92,6 +98,10 @@ namespace ParliamentVotes.Managers.DataImport
 
                 await ImportByBillNumber(billType, year, billNumber, context);
             }
+
+            var donePath = Path.Combine(webHostEnvironment.ContentRootPath, "App_Data", "Bills",
+                        year.ToString(), string.Format("{0}-done.txt", billType));
+            File.Create(donePath);
         }
 
         public async Task ImportByBillNumber(BillType billType, int year, string billNumber, IBrowsingContext context)
@@ -112,79 +122,96 @@ namespace ParliamentVotes.Managers.DataImport
 
                 if (versionDocument.StatusCode == HttpStatusCode.OK)
                 {
-                    var documentNode = versionDocument.QuerySelectorAll(".file a")
-                        .First(f => f.TextContent.EndsWith(".xml"));
-
-                    string xml;
-                    using (var webClient = new WebClient())
-                    {
-                        xml = webClient.DownloadString(
-                            $"http://legislation.govt.nz{documentNode.Attributes["href"].Value}");
-                    }
-
-                    XDocument legislationXml = XDocument.Parse(xml);
-
-                    string billTitle = legislationXml.XPathSelectElement("//billdetail//title").Value;
-
-                    string billTypeSlug = billType switch
-                    {
-                        BillType.Local => "local", BillType.Members => "member's", BillType.Private => "private",
-                        _ => "government"
-                    };
-                    string descriptionUrl =
-                        $"https://www.parliament.nz/en/ajax/billslisting/1323/all?Criteria.PageNumber=1&Criteria.Keyword=\"{billTitle}\"&Criteria.Timeframe=range&Criteria.DateFrom={year}-01-01&Criteria.DateTo={year}-12-31&Criteria.Dt=Bill - {billTypeSlug}&Criteria.ViewDetails=1";
-
-                    // Get a description for this bill
-                    var descriptionDocument = await context.OpenAsync(descriptionUrl);
-
-                    var tableRow = descriptionDocument.QuerySelectorAll(".list__row td")
-                        .FirstOrDefault(d =>
-                            (d.QuerySelector("h2") != null && d.QuerySelector("h2").TextContent == billTitle) ||
-                            (d.QuerySelector("h1") != null && d.QuerySelector("h1").TextContent == billTitle));
-
-                    string description = tableRow != null
-                        ? tableRow.QuerySelector(".section").ChildNodes
-                            .FirstOrDefault(c => c.NodeType == NodeType.Text && c.TextContent.Trim() != "").TextContent.Trim()
-                        : "";
-
                     try
                     {
-                        if (description == "")
-                            description = tableRow == null
-                                ? ""
-                                : tableRow.QuerySelector(".section p").TextContent.Trim();
+                        var documentNode = versionDocument.QuerySelectorAll(".file a")
+                            .First(f => f.TextContent.EndsWith(".xml"));
+
+                        string xml;
+                        using (var webClient = new WebClient())
+                        {
+                            xml = webClient.DownloadString(
+                                $"http://legislation.govt.nz{documentNode.Attributes["href"].Value}");
+                        }
+
+                        XDocument legislationXml = XDocument.Parse(xml);
+
+                        string billTitle = legislationXml.XPathSelectElement("//billdetail//title").Value;
+
+                        string billTypeSlug = billType switch
+                        {
+                            BillType.Local => "local",
+                            BillType.Members => "member's",
+                            BillType.Private => "private",
+                            _ => "government"
+                        };
+                        string descriptionUrl =
+                            $"https://www.parliament.nz/en/ajax/billslisting/1323/all?Criteria.PageNumber=1&Criteria.Keyword=\"{billTitle}\"&Criteria.Timeframe=range&Criteria.DateFrom={year}-01-01&Criteria.DateTo={year}-12-31&Criteria.Dt=Bill - {billTypeSlug}&Criteria.ViewDetails=1";
+
+                        // Get a description for this bill
+                        var descriptionDocument = await context.OpenAsync(descriptionUrl);
+
+                        try
+                        {
+
+                            var tableRow = descriptionDocument.QuerySelectorAll(".list__row td")
+                                .FirstOrDefault(d =>
+                                    (d.QuerySelector("h2") != null && d.QuerySelector("h2").TextContent == billTitle) ||
+                                    (d.QuerySelector("h1") != null && d.QuerySelector("h1").TextContent == billTitle));
+
+                            string description = tableRow != null
+                                ? tableRow.QuerySelector(".section").ChildNodes
+                                    .FirstOrDefault(c => c.NodeType == NodeType.Text && c.TextContent.Trim() != "").TextContent.Trim()
+                                : "";
+
+                            try
+                            {
+                                if (description == "")
+                                    description = tableRow == null
+                                        ? ""
+                                        : tableRow.QuerySelector(".section p").TextContent.Trim();
+                            }
+                            catch (Exception e)
+                            {
+                                throw e;
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            // do nothing
+                        }
+
+                        string memberName = legislationXml.XPathSelectElement("//cover//member").Value;
+                        memberName = memberName
+                            .Replace("Rt Hon ", "")
+                            .Replace("Hon ", "")
+                            .Replace("Dr ", "")
+                            .Replace("Sir ", "")
+                            .Replace("Dame ", "")
+                            .Replace("Vui ", "")
+                            .Replace("’", "'")
+                            .Trim();
+
+                        var member = db.Members.FirstOrDefault(m => m.FirstName + " " + m.LastName == memberName);
+
+                        if (member == null && year > 2005)
+                            throw new Exception("Member not found. Name " + memberName);
+
+                        string formattedBillNumber = legislationXml.XPathSelectAttributeValue("//bill/@bill.no") +
+                                                     legislationXml.XPathSelectAttributeValue("//bill/@split.letter");
+
+                        Bill bill = new Bill(billTitle, description, formattedBillNumber, member, billType, versionUrl, year);
+                        await db.Bills.AddAsync(bill);
+
+                        Directory.CreateDirectory(Path.Combine(webHostEnvironment.ContentRootPath, "App_Data", "Bills",
+                            year.ToString()));
+                        await File.WriteAllTextAsync(Path.Combine(webHostEnvironment.ContentRootPath, "App_Data", "Bills",
+                            year.ToString(), $"{formattedBillNumber}.xml"), xml);
                     }
                     catch (Exception e)
                     {
-                        throw e;
+                        var i = 0;
                     }
-
-                    string memberName = legislationXml.XPathSelectElement("//cover//member").Value;
-                    memberName = memberName
-                        .Replace("Rt Hon ", "")
-                        .Replace("Hon ", "")
-                        .Replace("Dr ", "")
-                        .Replace("Sir ", "")
-                        .Replace("Dame ", "")
-                        .Replace("Vui ", "")
-                        .Replace("’", "'")
-                        .Trim();
-
-                    var member = db.Members.FirstOrDefault(m => m.FirstName + " " + m.LastName == memberName);
-
-                    if (member == null && year > 2005)
-                        throw new Exception("Member not found. Name " + memberName);
-
-                    string formattedBillNumber = legislationXml.XPathSelectAttributeValue("//bill/@bill.no") +
-                                                 legislationXml.XPathSelectAttributeValue("//bill/@split.letter");
-
-                    Bill bill = new Bill(billTitle, description, formattedBillNumber, member, billType, versionUrl);
-                    await db.Bills.AddAsync(bill);
-
-                    Directory.CreateDirectory(Path.Combine(webHostEnvironment.ContentRootPath, "App_Data", "Bills",
-                        year.ToString()));
-                    await File.WriteAllTextAsync(Path.Combine(webHostEnvironment.ContentRootPath, "App_Data", "Bills",
-                        year.ToString(), $"{formattedBillNumber}.xml"), xml);
 
                     break;
                 }
