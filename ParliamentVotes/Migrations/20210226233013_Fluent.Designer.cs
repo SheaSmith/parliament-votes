@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ParliamentVotes.Data;
 
 namespace ParliamentVotes.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20210226233013_Fluent")]
+    partial class Fluent
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -550,7 +552,7 @@ namespace ParliamentVotes.Migrations
                     b.Property<DateTime?>("End")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("Party_Id")
+                    b.Property<int>("Party_Id")
                         .HasColumnType("int");
 
                     b.HasKey("Member_Id", "Start");
@@ -774,7 +776,7 @@ namespace ParliamentVotes.Migrations
             modelBuilder.Entity("ParliamentVotes.Models.Motions.Question", b =>
                 {
                     b.HasOne("ParliamentVotes.Models.Legislation.Bill", "Bill")
-                        .WithMany("Questions")
+                        .WithMany()
                         .HasForeignKey("Bill_Id");
 
                     b.HasOne("ParliamentVotes.Models.Organisational.Member", "Member")
@@ -788,7 +790,7 @@ namespace ParliamentVotes.Migrations
                         .IsRequired();
 
                     b.HasOne("ParliamentVotes.Models.Legislation.SupplementaryOrderPaper", "SupplementaryOrderPaper")
-                        .WithMany("Questions")
+                        .WithMany()
                         .HasForeignKey("SupplementaryOrderPaper_Id");
 
                     b.Navigation("Bill");
@@ -848,7 +850,9 @@ namespace ParliamentVotes.Migrations
 
                     b.HasOne("ParliamentVotes.Models.Organisational.Party", "Party")
                         .WithMany()
-                        .HasForeignKey("Party_Id");
+                        .HasForeignKey("Party_Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Member");
 
@@ -866,7 +870,7 @@ namespace ParliamentVotes.Migrations
                         .HasForeignKey("Party_Id");
 
                     b.HasOne("ParliamentVotes.Models.Motions.Question", "Question")
-                        .WithMany("PartyVotes")
+                        .WithMany()
                         .HasForeignKey("Question_Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -887,7 +891,7 @@ namespace ParliamentVotes.Migrations
                         .IsRequired();
 
                     b.HasOne("ParliamentVotes.Models.Motions.Question", "Question")
-                        .WithMany("PersonalVotes")
+                        .WithMany()
                         .HasForeignKey("Question_Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -900,31 +904,12 @@ namespace ParliamentVotes.Migrations
             modelBuilder.Entity("ParliamentVotes.Models.Votes.VoiceVote", b =>
                 {
                     b.HasOne("ParliamentVotes.Models.Motions.Question", "Question")
-                        .WithMany("VoiceVotes")
+                        .WithMany()
                         .HasForeignKey("Question_Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Question");
-                });
-
-            modelBuilder.Entity("ParliamentVotes.Models.Legislation.Bill", b =>
-                {
-                    b.Navigation("Questions");
-                });
-
-            modelBuilder.Entity("ParliamentVotes.Models.Legislation.SupplementaryOrderPaper", b =>
-                {
-                    b.Navigation("Questions");
-                });
-
-            modelBuilder.Entity("ParliamentVotes.Models.Motions.Question", b =>
-                {
-                    b.Navigation("PartyVotes");
-
-                    b.Navigation("PersonalVotes");
-
-                    b.Navigation("VoiceVotes");
                 });
 
             modelBuilder.Entity("ParliamentVotes.Models.Organisational.Member", b =>

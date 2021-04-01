@@ -29,11 +29,21 @@ namespace ParliamentVotes
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(builder =>
+                {
+                    builder.AllowAnyOrigin()
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
+                });
+            });
+
             services.AddControllers();
 
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(
-                    Configuration.GetConnectionString("DefaultConnection")));
+                    Configuration.GetConnectionString("DefaultConnection"), sqlServerOptions => sqlServerOptions.CommandTimeout(120)));
 
             services.AddMvc().AddJsonOptions(options =>
             {
@@ -45,7 +55,8 @@ namespace ParliamentVotes
 
             services.AddScoped<HansardImportManager, HansardImportManager>();
             services.AddScoped<MembersImportManager, MembersImportManager>();
-            services.AddScoped<LegislationImportManager, LegislationImportManager>();
+            services.AddScoped<BillImportManager, BillImportManager>();
+            services.AddScoped<SopImportManager, SopImportManager>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -60,12 +71,15 @@ namespace ParliamentVotes
 
             app.UseRouting();
 
+            app.UseCors();
+
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
             });
+
         }
     }
 }

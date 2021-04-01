@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ParliamentVotes.Data;
 using ParliamentVotes.ViewModels;
+using ParliamentVotes.ViewModels.Organisational;
 
 namespace ParliamentVotes.Controllers
 {

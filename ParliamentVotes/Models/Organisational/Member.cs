@@ -1,4 +1,6 @@
-﻿using System;
+﻿using ParliamentVotes.Models.Legislation;
+using ParliamentVotes.Models.Votes;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -52,5 +54,15 @@ namespace ParliamentVotes.Models.Organisational
         /// If the member is known as something else for personal votes (e.g. maiden name, or mistake when entering personal votes)
         /// </summary>
         public string AlsoKnownAs { get; set; }
+
+        /// <summary>
+        /// The bills this member is in charge of
+        /// </summary>
+        public List<Bill> Bills { get; set; }
+
+        /// <summary>
+        /// The split party votes associated with this member
+        /// </summary>
+        public List<PartyVote> SplitPartyVotes { get; set; }
     }
 }

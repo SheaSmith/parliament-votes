@@ -1,5 +1,6 @@
 ﻿using ParliamentVotes.Models.Legislation;
 using ParliamentVotes.Models.Organisational;
+using ParliamentVotes.Models.Votes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -93,5 +94,10 @@ namespace ParliamentVotes.Models.Motions
 
         [ForeignKey("Parliament_Number")]
         public virtual Parliament Parliament { get; set; }
+
+
+        public virtual IEnumerable<PartyVote> PartyVotes { get; set; }
+        public virtual IEnumerable<PersonalVote> PersonalVotes { get; set; }
+        public virtual IEnumerable<VoiceVote> VoiceVotes { get; set; }
     }
 }

@@ -8,6 +8,7 @@ using AngleSharp;
 using AngleSharp.Dom;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ParliamentVotes.Data;
 using ParliamentVotes.Managers.DataImport;
 using ParliamentVotes.Models.Legislation;
@@ -26,14 +27,16 @@ namespace ParliamentVotes.Controllers
         private readonly ApplicationDbContext db;
         private readonly HansardImportManager hansardImportManager;
         private readonly MembersImportManager membersImportManager;
-        private readonly LegislationImportManager legislationImportManager;
+        private readonly BillImportManager billImportManager;
+        private readonly SopImportManager sopImportManager;
 
-        public DataImportController(ApplicationDbContext db, HansardImportManager hansardImportManager, MembersImportManager membersImportManager, LegislationImportManager legislationImportManager)
+        public DataImportController(ApplicationDbContext db, HansardImportManager hansardImportManager, MembersImportManager membersImportManager, BillImportManager billImportManager, SopImportManager sopImportManager)
         {
             this.db = db;
             this.hansardImportManager = hansardImportManager;
             this.membersImportManager = membersImportManager;
-            this.legislationImportManager = legislationImportManager;
+            this.billImportManager = billImportManager;
+            this.sopImportManager = sopImportManager;
         }
 
         [HttpGet("mps")]
@@ -73,7 +76,8 @@ namespace ParliamentVotes.Controllers
         {
             var config = Configuration.Default.WithDefaultLoader();
             var context = BrowsingContext.New(config);
-            await legislationImportManager.ImportByBillNumber(billType, year, number, context);
+            var bills = await billImportManager.ImportByBillNumber(billType, year, number, context, db.Members.ToList(), db.Parliaments.ToList());
+            db.Bills.AddRange(bills);
 
             return Ok();
         }
@@ -82,7 +86,36 @@ namespace ParliamentVotes.Controllers
         public async Task<IActionResult> ImportBills()
         {
             
-            await legislationImportManager.ImportAllBills();
+            await billImportManager.ImportAllBills();
+
+            return Ok();
+        }
+
+        [HttpGet("legislation/bills/differential")]
+        public async Task<IActionResult> BillsDifferential()
+        {
+
+            await billImportManager.CheckNewBills();
+
+            return Ok();
+        }
+
+        [HttpGet("legislation/sops/by-number")]
+        public async Task<IActionResult> ImportSpecificSop(SupplementaryOrderPaperType sopType, int year, string number)
+        {
+            var config = Configuration.Default.WithDefaultLoader();
+            var context = BrowsingContext.New(config);
+            var sops = await sopImportManager.ImportBySopNumber(sopType, year, number, context, db.Members.ToList(), db.Bills.Include(b => b.Parliaments).ToList(), db.Parliaments.ToList());
+            db.SupplementaryOrderPapers.AddRange(sops);
+
+            return Ok();
+        }
+
+        [HttpGet("legislation/sops")]
+        public async Task<IActionResult> ImportSops()
+        {
+
+            await sopImportManager.ImportAllSops();
 
             return Ok();
         }

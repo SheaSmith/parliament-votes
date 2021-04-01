@@ -1,4 +1,5 @@
-﻿using ParliamentVotes.Models.Organisational;
+﻿using ParliamentVotes.Models.Motions;
+using ParliamentVotes.Models.Organisational;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -41,13 +42,9 @@ namespace ParliamentVotes.Models.Legislation
         public DateTime LastUpdated { get; set; }
 
         /// <summary>
-        /// The member that is in charge of this bill
+        /// The member(s) that are in charge of this bill
         /// </summary>
-        [Required]
-        public int Member_Id { get; set; }
-
-        [ForeignKey("Member_Id")]
-        public virtual Member Member { get; set; }
+        public List<Member> Members { get; set; }
 
         /// <summary>
         /// What type of bill this is
@@ -62,23 +59,35 @@ namespace ParliamentVotes.Models.Legislation
         public string DirectoryUrl { get; set; }
 
         /// <summary>
+        /// The parliaments this bill applies to
+        /// </summary>
+        [Required]
+        public List<Parliament> Parliaments { get; set; }
+
+        /// <summary>
         /// The year this bill was introduced
         /// </summary>
         [Required]
         public int Year { get; set; }
 
+        /// <summary>
+        /// The questions associated with this bill
+        /// </summary>
+        public virtual List<Question> Questions { get; set; }
+
         public Bill() {}
         
-        public Bill(string title, string description, string billNumber, Member member, BillType billType,
-            string directoryUrl, int year)
+        public Bill(string title, string description, string billNumber, List<Member> members, BillType billType,
+            string directoryUrl, List<Parliament> parliaments, int year)
         {
             Title = title;
             Description = description;
             BillNumber = billNumber;
-            Member = member;
+            Members = members;
             Type = billType;
             DirectoryUrl = directoryUrl;
             LastUpdated = DateTime.UtcNow;
+            Parliaments = parliaments;
             Year = year;
         }
     }

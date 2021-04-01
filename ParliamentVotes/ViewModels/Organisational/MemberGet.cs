@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace ParliamentVotes.ViewModels
+namespace ParliamentVotes.ViewModels.Organisational
 {
     public class MemberGet
     {        

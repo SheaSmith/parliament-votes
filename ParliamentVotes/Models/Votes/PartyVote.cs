@@ -12,13 +12,12 @@ namespace ParliamentVotes.Models.Votes
     public class PartyVote : Vote
     {
 
-        public void Update(Question question, int numberOfVotes, bool? position = null, Party party = null, Member member = null, string complexPosition = null, List<SplitPartyVote> splitPartyVotes = null)
+        public void Update(Question question, int numberOfVotes, bool? position = null, Party party = null, Member member = null, string complexPosition = null)
         {
             base.Update(question, position, complexPosition);
             NumberOfVotes = numberOfVotes;
             Party = party;
             Member = member;
-            SplitPartyVotes = splitPartyVotes;
         }
 
         /// <summary>
@@ -33,8 +32,6 @@ namespace ParliamentVotes.Models.Votes
         /// The ID of the member making this vote, e.g. if they are an independent
         /// </summary>
         public int? Member_Id { get; set; }
-
-        [ForeignKey("Member_Id")]
         public virtual Member Member { get; set; }
 
 
@@ -47,6 +44,6 @@ namespace ParliamentVotes.Models.Votes
         /// <summary>
         /// If this is a split party vote, specify which members voted for this position
         /// </summary>
-        public virtual List<SplitPartyVote> SplitPartyVotes { get; set; }
+        public List<Member> SplitPartyVotes { get; set; } = new List<Member>();
     }
 }

@@ -35,6 +35,7 @@ namespace ParliamentVotes.Models.Organisational
     public enum GoverningRelationship
     {
         Coalition,
-        ConfidenceAndSupply
+        ConfidenceAndSupply,
+        CooperationAgreement
     }
 }

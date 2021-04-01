@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ParliamentVotes.Models.Legislation;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -36,5 +37,10 @@ namespace ParliamentVotes.Models.Organisational
         /// The seating plan for this parliament
         /// </summary>
         public virtual List<Seating> SeatingPlan { get; set; }
+
+        /// <summary>
+        /// The bills for this parliament
+        /// </summary>
+        public List<Bill> Bills { get; set; }
     }
 }

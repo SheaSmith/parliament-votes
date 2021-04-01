@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace ParliamentVotes.ViewModels
+namespace ParliamentVotes.ViewModels.Organisational
 {
     public class TenureGet
     {
@@ -15,7 +15,7 @@ namespace ParliamentVotes.ViewModels
 
         public TenureGet(Tenure tenure)
         {
-            Party = new PartyGet(tenure.Party);
+            Party = tenure.Party == null ? null : new PartyGet(tenure.Party);
             Start = tenure.Start;
             End = tenure.End;
             Electorate = tenure.Electorate;

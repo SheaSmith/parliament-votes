@@ -23,7 +23,7 @@ namespace ParliamentVotes.Models.Organisational
         /// <summary>
         /// The ID of the member this tenure represents
         /// </summary>
-    [Required]
+        [Required]
         public int Member_Id { get; set; }
 
         /// <summary>
@@ -46,8 +46,7 @@ namespace ParliamentVotes.Models.Organisational
         /// <summary>
         /// The party this member belonged too (if applicable)
         /// </summary>
-        [Required]
-        public int Party_Id { get; set; }
+        public int? Party_Id { get; set; }
 
         [ForeignKey("Party_Id")]
         public virtual Party Party { get; set; }

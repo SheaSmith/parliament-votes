@@ -88,7 +88,8 @@ namespace ParliamentVotes.Managers.DataImport
 
             var memberships = descriptionNode.TextContent.Replace("10 September;", "10 September 1990;").Replace(
                 "NZ First Party, 27 July 2002 - 11 August 2005, 15 February 2008 - 8 November 2008",
-                "NZ First Party, 27 July 2002 - 11 August 2005; 15 February 2008 - 8 November 2008").Split("; ");
+                "NZ First Party, 27 July 2002 - 11 August 2005; 15 February 2008 - 8 November 2008")
+                .Replace("National Party 8 November 2008", "National Party, 8 November 2008").Split("; ");
             Party lastParty = null;
             foreach (string membership in memberships)
             {
@@ -104,7 +105,7 @@ namespace ParliamentVotes.Managers.DataImport
                         lastParty = parties.FirstOrDefault(
                             p => p.Name == party || (p.AlsoKnownAs != null && p.AlsoKnownAs.Contains(party)));
 
-                        if (lastParty == null)
+                        if (lastParty == null && party != "Independent")
                         {
                             lastParty = new Party(party);
                             parties.Add(lastParty);
@@ -134,7 +135,7 @@ namespace ParliamentVotes.Managers.DataImport
                 DateTime end = DateTime.ParseExact(dateComponents[1].Trim(), "d MMMM yyyy", new CultureInfo("en-NZ"));
                 end = TimeZoneInfo.ConvertTimeToUtc(end, nzst);
 
-                Tenure tenure = tenures.FirstOrDefault(t => t.Member_Id == member.Id && t.Start == begin);
+                Tenure tenure = tenures.FirstOrDefault(t => t.Member.Id == member.Id && t.Start == begin);
 
                 if (tenure == null)
                 {
@@ -180,7 +181,7 @@ namespace ParliamentVotes.Managers.DataImport
                     continue;
                 }
 
-                if (firstRow.TextContent.Trim().Replace(" of ", " for ") == "Member for / List")
+                if (firstRow.TextContent.Trim().Replace(" of ", " for ").Replace("  ", " ") == "Member for / List")
                 {
                     foreach (var row in table.QuerySelectorAll("tbody tr"))
                     {
@@ -196,7 +197,7 @@ namespace ParliamentVotes.Managers.DataImport
                                 p => p.Name == partyName ||
                                      (p.AlsoKnownAs != null && p.AlsoKnownAs.Contains(partyName)));
 
-                            if (party == null)
+                            if (party == null && partyName != "Independent")
                             {
                                 party = new Party(partyName);
                                 parties.Add(party);
@@ -238,7 +239,7 @@ namespace ParliamentVotes.Managers.DataImport
                             begin = TimeZoneInfo.ConvertTimeToUtc(begin, nzst);
                         }
 
-                        Tenure tenure = tenures.FirstOrDefault(t => t.Member_Id == member.Id && t.Start == begin);
+                        Tenure tenure = tenures.FirstOrDefault(t => t.Member.Id == member.Id && t.Start == begin);
 
                         if (tenure == null)
                         {

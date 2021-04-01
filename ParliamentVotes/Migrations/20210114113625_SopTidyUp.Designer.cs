@@ -3,66 +3,23 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ParliamentVotes.Data;
 
 namespace ParliamentVotes.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20210114113625_SopTidyUp")]
+    partial class SopTidyUp
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasAnnotation("ProductVersion", "3.1.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
-                .HasAnnotation("ProductVersion", "5.0.3")
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-            modelBuilder.Entity("BillMember", b =>
-                {
-                    b.Property<int>("BillsId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MembersId")
-                        .HasColumnType("int");
-
-                    b.HasKey("BillsId", "MembersId");
-
-                    b.HasIndex("MembersId");
-
-                    b.ToTable("BillMember");
-                });
-
-            modelBuilder.Entity("BillParliament", b =>
-                {
-                    b.Property<int>("BillsId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ParliamentsNumber")
-                        .HasColumnType("int");
-
-                    b.HasKey("BillsId", "ParliamentsNumber");
-
-                    b.HasIndex("ParliamentsNumber");
-
-                    b.ToTable("BillParliament");
-                });
-
-            modelBuilder.Entity("MemberPartyVote", b =>
-                {
-                    b.Property<int>("SplitPartyVotesId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SplitPartyVotesId1")
-                        .HasColumnType("int");
-
-                    b.HasKey("SplitPartyVotesId", "SplitPartyVotesId1");
-
-                    b.HasIndex("SplitPartyVotesId1");
-
-                    b.ToTable("MemberPartyVote");
-                });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -74,18 +31,18 @@ namespace ParliamentVotes.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .HasMaxLength(256);
 
                     b.Property<string>("NormalizedName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .HasMaxLength(256);
 
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedName")
                         .IsUnique()
-                        .HasDatabaseName("RoleNameIndex")
+                        .HasName("RoleNameIndex")
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("AspNetRoles");
@@ -128,8 +85,8 @@ namespace ParliamentVotes.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .HasMaxLength(256);
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
@@ -141,12 +98,12 @@ namespace ParliamentVotes.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("NormalizedEmail")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .HasMaxLength(256);
 
                     b.Property<string>("NormalizedUserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .HasMaxLength(256);
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
@@ -164,17 +121,17 @@ namespace ParliamentVotes.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("UserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .HasMaxLength(256);
 
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedEmail")
-                        .HasDatabaseName("EmailIndex");
+                        .HasName("EmailIndex");
 
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
-                        .HasDatabaseName("UserNameIndex")
+                        .HasName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers");
@@ -312,6 +269,9 @@ namespace ParliamentVotes.Migrations
                     b.Property<DateTime>("LastUpdated")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("Member_Id")
+                        .HasColumnType("int");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -324,6 +284,8 @@ namespace ParliamentVotes.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Member_Id");
+
                     b.ToTable("Bills");
                 });
 
@@ -334,11 +296,8 @@ namespace ParliamentVotes.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<int?>("AmendingBill_Id")
+                    b.Property<int>("AmendingBill_Id")
                         .HasColumnType("int");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("DirectoryUrl")
                         .IsRequired()
@@ -353,9 +312,6 @@ namespace ParliamentVotes.Migrations
                     b.Property<int>("Number")
                         .HasColumnType("int");
 
-                    b.Property<int>("Parliament_Number")
-                        .HasColumnType("int");
-
                     b.Property<int>("Type")
                         .HasColumnType("int");
 
@@ -367,8 +323,6 @@ namespace ParliamentVotes.Migrations
                     b.HasIndex("AmendingBill_Id");
 
                     b.HasIndex("Member_Id");
-
-                    b.HasIndex("Parliament_Number");
 
                     b.ToTable("SupplementaryOrderPapers");
                 });
@@ -550,7 +504,7 @@ namespace ParliamentVotes.Migrations
                     b.Property<DateTime?>("End")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("Party_Id")
+                    b.Property<int>("Party_Id")
                         .HasColumnType("int");
 
                     b.HasKey("Member_Id", "Start");
@@ -627,6 +581,21 @@ namespace ParliamentVotes.Migrations
                     b.ToTable("PersonalVotes");
                 });
 
+            modelBuilder.Entity("ParliamentVotes.Models.Votes.SplitPartyVote", b =>
+                {
+                    b.Property<int>("PartyVote_Id")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Member_Id")
+                        .HasColumnType("int");
+
+                    b.HasKey("PartyVote_Id", "Member_Id");
+
+                    b.HasIndex("Member_Id");
+
+                    b.ToTable("SplitPartyVotes");
+                });
+
             modelBuilder.Entity("ParliamentVotes.Models.Votes.VoiceVote", b =>
                 {
                     b.Property<int>("Id")
@@ -648,51 +617,6 @@ namespace ParliamentVotes.Migrations
                     b.HasIndex("Question_Id");
 
                     b.ToTable("VoiceVotes");
-                });
-
-            modelBuilder.Entity("BillMember", b =>
-                {
-                    b.HasOne("ParliamentVotes.Models.Legislation.Bill", null)
-                        .WithMany()
-                        .HasForeignKey("BillsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ParliamentVotes.Models.Organisational.Member", null)
-                        .WithMany()
-                        .HasForeignKey("MembersId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("BillParliament", b =>
-                {
-                    b.HasOne("ParliamentVotes.Models.Legislation.Bill", null)
-                        .WithMany()
-                        .HasForeignKey("BillsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ParliamentVotes.Models.Organisational.Parliament", null)
-                        .WithMany()
-                        .HasForeignKey("ParliamentsNumber")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("MemberPartyVote", b =>
-                {
-                    b.HasOne("ParliamentVotes.Models.Votes.PartyVote", null)
-                        .WithMany()
-                        .HasForeignKey("SplitPartyVotesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ParliamentVotes.Models.Organisational.Member", null)
-                        .WithMany()
-                        .HasForeignKey("SplitPartyVotesId1")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -746,35 +670,32 @@ namespace ParliamentVotes.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ParliamentVotes.Models.Legislation.Bill", b =>
+                {
+                    b.HasOne("ParliamentVotes.Models.Organisational.Member", "Member")
+                        .WithMany()
+                        .HasForeignKey("Member_Id");
+                });
+
             modelBuilder.Entity("ParliamentVotes.Models.Legislation.SupplementaryOrderPaper", b =>
                 {
                     b.HasOne("ParliamentVotes.Models.Legislation.Bill", "AmendingBill")
                         .WithMany()
-                        .HasForeignKey("AmendingBill_Id");
+                        .HasForeignKey("AmendingBill_Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("ParliamentVotes.Models.Organisational.Member", "Member")
                         .WithMany()
                         .HasForeignKey("Member_Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("ParliamentVotes.Models.Organisational.Parliament", "Parliament")
-                        .WithMany()
-                        .HasForeignKey("Parliament_Number")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AmendingBill");
-
-                    b.Navigation("Member");
-
-                    b.Navigation("Parliament");
                 });
 
             modelBuilder.Entity("ParliamentVotes.Models.Motions.Question", b =>
                 {
                     b.HasOne("ParliamentVotes.Models.Legislation.Bill", "Bill")
-                        .WithMany("Questions")
+                        .WithMany()
                         .HasForeignKey("Bill_Id");
 
                     b.HasOne("ParliamentVotes.Models.Organisational.Member", "Member")
@@ -788,16 +709,8 @@ namespace ParliamentVotes.Migrations
                         .IsRequired();
 
                     b.HasOne("ParliamentVotes.Models.Legislation.SupplementaryOrderPaper", "SupplementaryOrderPaper")
-                        .WithMany("Questions")
+                        .WithMany()
                         .HasForeignKey("SupplementaryOrderPaper_Id");
-
-                    b.Navigation("Bill");
-
-                    b.Navigation("Member");
-
-                    b.Navigation("Parliament");
-
-                    b.Navigation("SupplementaryOrderPaper");
                 });
 
             modelBuilder.Entity("ParliamentVotes.Models.Organisational.GoverningParty", b =>
@@ -813,10 +726,6 @@ namespace ParliamentVotes.Migrations
                         .HasForeignKey("Party_Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Parliament");
-
-                    b.Navigation("Party");
                 });
 
             modelBuilder.Entity("ParliamentVotes.Models.Organisational.Seating", b =>
@@ -832,10 +741,6 @@ namespace ParliamentVotes.Migrations
                         .HasForeignKey("Parliament_Number")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Member");
-
-                    b.Navigation("Parliament");
                 });
 
             modelBuilder.Entity("ParliamentVotes.Models.Organisational.Tenure", b =>
@@ -848,11 +753,9 @@ namespace ParliamentVotes.Migrations
 
                     b.HasOne("ParliamentVotes.Models.Organisational.Party", "Party")
                         .WithMany()
-                        .HasForeignKey("Party_Id");
-
-                    b.Navigation("Member");
-
-                    b.Navigation("Party");
+                        .HasForeignKey("Party_Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("ParliamentVotes.Models.Votes.PartyVote", b =>
@@ -866,16 +769,10 @@ namespace ParliamentVotes.Migrations
                         .HasForeignKey("Party_Id");
 
                     b.HasOne("ParliamentVotes.Models.Motions.Question", "Question")
-                        .WithMany("PartyVotes")
+                        .WithMany()
                         .HasForeignKey("Question_Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Member");
-
-                    b.Navigation("Party");
-
-                    b.Navigation("Question");
                 });
 
             modelBuilder.Entity("ParliamentVotes.Models.Votes.PersonalVote", b =>
@@ -887,56 +784,34 @@ namespace ParliamentVotes.Migrations
                         .IsRequired();
 
                     b.HasOne("ParliamentVotes.Models.Motions.Question", "Question")
-                        .WithMany("PersonalVotes")
+                        .WithMany()
                         .HasForeignKey("Question_Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
 
-                    b.Navigation("Member");
+            modelBuilder.Entity("ParliamentVotes.Models.Votes.SplitPartyVote", b =>
+                {
+                    b.HasOne("ParliamentVotes.Models.Organisational.Member", "Member")
+                        .WithMany()
+                        .HasForeignKey("Member_Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("Question");
+                    b.HasOne("ParliamentVotes.Models.Votes.PartyVote", "PartyVote")
+                        .WithMany("SplitPartyVotes")
+                        .HasForeignKey("PartyVote_Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("ParliamentVotes.Models.Votes.VoiceVote", b =>
                 {
                     b.HasOne("ParliamentVotes.Models.Motions.Question", "Question")
-                        .WithMany("VoiceVotes")
+                        .WithMany()
                         .HasForeignKey("Question_Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Question");
-                });
-
-            modelBuilder.Entity("ParliamentVotes.Models.Legislation.Bill", b =>
-                {
-                    b.Navigation("Questions");
-                });
-
-            modelBuilder.Entity("ParliamentVotes.Models.Legislation.SupplementaryOrderPaper", b =>
-                {
-                    b.Navigation("Questions");
-                });
-
-            modelBuilder.Entity("ParliamentVotes.Models.Motions.Question", b =>
-                {
-                    b.Navigation("PartyVotes");
-
-                    b.Navigation("PersonalVotes");
-
-                    b.Navigation("VoiceVotes");
-                });
-
-            modelBuilder.Entity("ParliamentVotes.Models.Organisational.Member", b =>
-                {
-                    b.Navigation("Tenures");
-                });
-
-            modelBuilder.Entity("ParliamentVotes.Models.Organisational.Parliament", b =>
-                {
-                    b.Navigation("GoverningParties");
-
-                    b.Navigation("SeatingPlan");
                 });
 #pragma warning restore 612, 618
         }

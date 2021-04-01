@@ -1,4 +1,5 @@
-﻿using ParliamentVotes.Models.Organisational;
+﻿using ParliamentVotes.Models.Motions;
+using ParliamentVotes.Models.Organisational;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -29,13 +30,25 @@ namespace ParliamentVotes.Models.Legislation
         public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
 
         /// <summary>
-        /// The parliament of this SOP
+        /// The year for this SOP
+        /// </summary>
+        [Required]
+        public int Year { get; set; }
+
+        /// <summary>
+        /// The date this SOP was submitted
+        /// </summary>
+        [Required]
+        public DateTime Date { get; set; }
+
+        /// <summary>
+        /// The parliament this SOP was submitted under
         /// </summary>
         [Required]
         public int Parliament_Number { get; set; }
 
         [ForeignKey("Parliament_Number")]
-        public virtual Parliament Parliament { get; set; }
+        public Parliament Parliament { get; set; }
 
         /// <summary>
         /// The ID of the member who is in charge of this SOP
@@ -55,14 +68,6 @@ namespace ParliamentVotes.Models.Legislation
         public virtual Bill AmendingBill { get; set; }
 
         /// <summary>
-        /// The ID of the SOP that is being ammended (if applicable)
-        /// </summary>
-        public int? AmendingSupplementaryOrderPaper_Id { get; set; }
-
-        [ForeignKey("AmendingSupplementaryOrderPaper_Id")]
-        public virtual SupplementaryOrderPaper AmendingSupplementaryOrderPaper { get; set; }
-
-        /// <summary>
         /// The type of this SOP
         /// </summary>
         [Required]
@@ -72,13 +77,26 @@ namespace ParliamentVotes.Models.Legislation
         /// A slug for this version, which will lead us to the filename
         /// </summary>
         [Required]
-        public string Slug { get; set; }
+        public string DirectoryUrl { get; set; }
 
         /// <summary>
-        /// The name of the XML file for this SOP
+        /// The questions associated with this SOP
         /// </summary>
-        [Required]
-        public string FileName { get; set; }
+        public virtual List<Question> Questions { get; set; }
+
+        public SupplementaryOrderPaper() { }
+
+        public SupplementaryOrderPaper(int number, int year, Member member, Bill amendingBill, SupplementaryOrderPaperType type, string directoryUrl, Parliament parliament, DateTime date)
+        {
+            Number = number;
+            Year = year;
+            Member = member;
+            AmendingBill = amendingBill;
+            Type = type;
+            DirectoryUrl = directoryUrl;
+            Parliament = parliament;
+            Date = date;
+        }
 
     }
 

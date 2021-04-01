@@ -105,10 +105,10 @@ namespace ParliamentVotes.Managers.DataImport
                     nzst = TimeZoneInfo.FindSystemTimeZoneById("Pacific/Auckland");
                 }
 
-            var lastDate = _db.Questions.OrderByDescending(q => q.Timestamp).First().Timestamp;
+            var lastDate = _db.Questions.OrderByDescending(q => q.Timestamp).First().Timestamp.AddDays(1);
 
             // We want to make sure we aren't grabbing stuff that isn't quite done yet, so we'll do a 2 day delay on the import
-            var importDate = DateTime.UtcNow.AddDays(-2);
+            var importDate = DateTime.UtcNow.AddDays(-1);
 
             if (importDate > lastDate)
             {
@@ -117,7 +117,7 @@ namespace ParliamentVotes.Managers.DataImport
 
                 await GetUrls(
                     "https://www.parliament.nz/en/ajax/hansardlisting/read/6227?criteria.ParliamentNumber=-1&criteria.DateFrom=" +
-                    lastDate.ToString("yyyy-MM-dd") + "&criteria.DateTo=" + lastDate.ToString("yyyy-MM-dd"));
+                    lastDate.ToString("yyyy-MM-dd") + "&criteria.DateTo=" + importDate.ToString("yyyy-MM-dd"));
             }
         }
 
@@ -301,8 +301,8 @@ namespace ParliamentVotes.Managers.DataImport
                             }
 
                             memberMoving = memberMoving.Replace("rt hon ", "").Replace("hon ", "").Replace("dr ", "")
-                                .Replace("sir ", "").Replace("dame ", "").Replace("vui ", "")
-                                .Replace("’", "'")
+                                .Replace("sir ", "").Replace("dame ", "").Replace("vui ", "").Replace("luamanuvao ", "")
+                                .Replace("’", "'").Replace("`", "'")
                                 .Trim();
 
                             if (!memberMoving.ToLower().Contains("speaker"))
@@ -412,11 +412,27 @@ namespace ParliamentVotes.Managers.DataImport
                                     .Replace(" agreed to.", "").Trim();
                             }
 
+                            // If the next node says that the bill was read a first time, or referred to a select committee, then we skip and use that
+                            if (nextNode != null && nextNode.ClassName == "IndentMarginalone" && nextNode.TextContent.Contains("Bill ") && voiceVoteContent.StartsWith("Motion"))
+                            {
+                                if (lastQuestionDescription.StartsWith("Motion"))
+                                    lastQuestionDescription = null;
+                                continue;
+                            }
+
+                            // If this is a motion trapped inside of a party vote then we skip
+                            if (nextNode != null && nextNode.ClassName == "VoteResult")
+                            {
+                                lastQuestionDescription = null;
+                                continue;
+                            }
+
                             if ((previousNode != null && previousNode.ClassList.Contains("VoteText") &&
                                  (lastQuestionDescription.Contains("read") ||
                                   lastQuestionDescription.Contains("agreed"))) || (nextNode != null &&
                                 nextNode.ClassList.Contains("VoteReason") &&
-                                voiceVoteContent.Contains("The question was put that ")))
+                                voiceVoteContent.Contains("The question was put that ")) || 
+                                (previousNode != null && previousNode.ClassList.Contains("VoteResult")))
                             {
                                 // Remove the last question description and clause, as there should only be one question for each of these
                                 lastQuestionDescription = null;
@@ -448,12 +464,12 @@ namespace ParliamentVotes.Managers.DataImport
                             var memberNameMatch = lastQuestionDescription.Replace(" the the ", " ").Replace(" the ", "")
                                 .Replace(" the Rt Hon ", " ").Replace(" the Hon ", " ").Replace(" Rt Hon ", " ")
                                 .Replace(" Hon ", " ").Replace(" Dr ", " ").Replace(" Sir ", " ").Replace(" Dame ", " ")
-                                .Replace(" Vui ", " ")
+                                .Replace(" Vui ", " ").Replace(" Luamanuvao ", " ")
                                 .Split(" in the name of ");
 
                             if (memberNameMatch.Length > 1)
                             {
-                                var nameStart = memberNameMatch[1].Trim().ToLower().Replace("’", "'");
+                                var nameStart = memberNameMatch[1].Trim().ToLower().Replace("’", "'").Replace("`", "'");
                                 amendMember = _db.Members.FirstOrDefault(m =>
                                     nameStart.StartsWith((m.FirstName + " " + m.LastName).ToLower()) ||
                                     nameStart.StartsWith(m.AlsoKnownAs.ToLower()));
@@ -501,7 +517,7 @@ namespace ParliamentVotes.Managers.DataImport
                             }
 
                             // See if this voice vote already exists
-                            VoiceVote vote = _db.VoiceVotes.FirstOrDefault(v => v.Question_Id == question.Id);
+                            VoiceVote vote = _db.VoiceVotes.FirstOrDefault(v => v.Question.Id == question.Id);
 
                             // If the vote doesn't exist, then we need to create a new one
                             if (vote == null)
@@ -576,12 +592,12 @@ namespace ParliamentVotes.Managers.DataImport
                         var memberNameMatch = lastQuestionDescription.Replace(" the the ", " ").Replace(" the ", "")
                             .Replace(" the Rt Hon ", " ").Replace(" the Hon ", " ").Replace(" Rt Hon ", " ")
                             .Replace(" Hon ", " ").Replace(" Dr ", " ").Replace(" Sir ", " ").Replace(" Dame ", " ")
-                            .Replace(" Vui ", " ")
+                            .Replace(" Vui ", " ").Replace(" Luamanuvao ", " ")
                             .Split(" in the name of ");
 
                         if (memberNameMatch.Length > 1)
                         {
-                            var nameStart = memberNameMatch[1].Trim().Replace("’", "'").ToLower();
+                            var nameStart = memberNameMatch[1].Trim().Replace("’", "'").Replace("`", "'").ToLower();
                             amendMember = _db.Members.FirstOrDefault(m =>
                                 nameStart.StartsWith((m.FirstName + " " + m.LastName).ToLower()) ||
                                 nameStart.StartsWith(m.AlsoKnownAs.ToLower()));
@@ -633,7 +649,7 @@ namespace ParliamentVotes.Managers.DataImport
                         }
 
                         // Remove any existing party votes for this question
-                        var existingPartyVotes = _db.PartyVotes.Where(p => p.Question_Id == question.Id);
+                        var existingPartyVotes = _db.PartyVotes.Where(p => p.Question.Id == question.Id);
                         _db.PartyVotes.RemoveRange(existingPartyVotes);
 
                         // Get the first node where the vote results are actually stored
@@ -703,7 +719,7 @@ namespace ParliamentVotes.Managers.DataImport
                                     if (partyMatch.Success)
                                     {
                                         // Get the party name and the number of voters
-                                        string partyName = partyMatch.Groups[1].Value.Trim().Replace("’", "'");
+                                        string partyName = partyMatch.Groups[1].Value.Trim().Replace("’", "'").Replace("`", "'");
                                         int partyNumbers = int.Parse(partyMatch.Groups[2].Value);
 
                                         // Find the party in the database
@@ -734,7 +750,7 @@ namespace ParliamentVotes.Managers.DataImport
                                         if (splitPartyVoteMatch.Success)
                                         {
                                             // This is a split party vote, and needs to be treated accordingly
-                                            var members = splitPartyVoteMatch.Groups[3].Value.Replace("’", "'")
+                                            var members = splitPartyVoteMatch.Groups[3].Value.Replace("’", "'").Replace("`", "'")
                                                 .Split(", ");
                                             List<Member> splitMembers = _db.Members.Where(m =>
                                                     (members.Contains(m.LastName) ||
@@ -745,8 +761,7 @@ namespace ParliamentVotes.Managers.DataImport
                                                         (t.End == null || t.End >= sittingDate)))
                                                 .ToList();
 
-                                            await _db.SplitPartyVotes.AddRangeAsync(splitMembers.Select(m =>
-                                                new SplitPartyVote(partyVote, m)));
+                                            partyVote.SplitPartyVotes = splitMembers;
                                         }
 
                                         // Update the party vote accordingly
@@ -758,7 +773,7 @@ namespace ParliamentVotes.Managers.DataImport
                                     {
                                         // Parse out the member name if it has a prefix
                                         var memberName = voter.Replace("Independent: ", "").Replace("Independent ", "")
-                                            .Replace("’", "'").Trim();
+                                            .Replace("’", "'").Replace("`", "'").Trim();
 
                                         // Find the member in the DB, by their last name, or alternately by their last name and their first initial
                                         var member = _db.Members.FirstOrDefault(m =>
@@ -802,7 +817,7 @@ namespace ParliamentVotes.Managers.DataImport
                                     if (!string.IsNullOrEmpty(memberName))
                                     {
                                         var isProxy = memberName.Contains("(P)");
-                                        memberName = memberName.Replace("(P)", "").Replace("’", "'").Trim();
+                                        memberName = memberName.Replace("(P)", "").Replace("’", "'").Replace("`", "'").Trim();
 
                                         // Find the member in the DB, by their last name, or alternately by their last name and their first initial
                                         var member = _db.Members.FirstOrDefault(m =>
@@ -820,7 +835,7 @@ namespace ParliamentVotes.Managers.DataImport
                                         await _db.PersonalVotes.AddAsync(personalVote);
 
                                         personalVote.Proxy = isProxy;
-                                        personalVote.Member_Id = member.Id;
+                                        personalVote.Member = member;
 
                                         // Update the personal vote
                                         personalVote.Update(question, lastPosition, lastComplexPosition);
@@ -1010,7 +1025,7 @@ namespace ParliamentVotes.Managers.DataImport
                                             lastQuestionDescription = motion;
 
                                         var memberNameElements = speechLine.QuerySelectorAll("strong");
-                                        if (memberNameElements.Length > 0)
+                                        if (memberNameElements.Length > 0 && !speechLine.TextContent.Contains("on behalf of"))
                                         {
                                             var memberNameAndTitle = string.Join("",
                                                 memberNameElements.Select(m => m.TextContent));
@@ -1026,7 +1041,7 @@ namespace ParliamentVotes.Managers.DataImport
 
                                             memberMoving = memberMoving.Replace("rt hon ", "").Replace("hon ", "")
                                                 .Replace("dr ", "").Replace("sir ", "").Replace("dame ", "").Replace("vui ", "")
-                                                .Replace("’", "'").Replace("\n", "")
+                                                .Replace("luamanuvao ", "").Replace("’", "'").Replace("the ", "").Replace("`", "'").Replace("\n", "")
                                                 .Trim();
 
                                             if (!memberMoving.ToLower().Contains("speaker") &&
@@ -1203,12 +1218,13 @@ namespace ParliamentVotes.Managers.DataImport
                                                     .Replace(" Dame ", " ")
                                                     .Replace(" Hon ", " ").Replace(" Dr ", " ")
                                                     .Replace(" Vui ", " ")
+                                                    .Replace(" Luamanuvao ", " ")
                                                     .Split(" in the name of ");
 
                                                 if (memberNameMatch.Length > 1)
                                                 {
                                                     var nameStart = memberNameMatch[1].Trim().ToLower()
-                                                        .Replace("’", "'");
+                                                        .Replace("’", "'").Replace("`", "'");
                                                     amendMember = _db.Members.FirstOrDefault(m =>
                                                         nameStart.StartsWith((m.FirstName + " " + m.LastName)
                                                             .ToLower()) ||
@@ -1271,7 +1287,7 @@ namespace ParliamentVotes.Managers.DataImport
 
                                                 // Remove any existing party votes for this question
                                                 var existingPartyVotes =
-                                                    _db.PartyVotes.Where(p => p.Question_Id == question.Id);
+                                                    _db.PartyVotes.Where(p => p.Question.Id == question.Id);
                                                 _db.PartyVotes.RemoveRange(existingPartyVotes);
                                             }
 
@@ -1311,7 +1327,7 @@ namespace ParliamentVotes.Managers.DataImport
 
                                                     var voteTextNode = partyVoteRow.QuerySelector(".VoteText");
 
-                                                    if (voteTextNode != null)
+                                                    if (voteTextNode != null && !voteTextNode.TextContent.Contains("Clause 2"))
                                                     {
                                                         string votersText = voteTextNode.TextContent.Trim();
 
@@ -1355,6 +1371,10 @@ namespace ParliamentVotes.Managers.DataImport
                                                         // Fix for united future bug
                                                         votersText = votersText.Replace(", United Future",
                                                             "; United Future");
+                                                        votersText = votersText.Replace("United Party 8",
+                                                            "United Future 8");
+                                                        votersText = votersText.Replace("United Future; 8",
+                                                            "United Future 8;");
 
                                                         // Fix for mana bug
                                                         votersText = votersText.Replace(", Mana", "; Mana")
@@ -1367,6 +1387,8 @@ namespace ParliamentVotes.Managers.DataImport
                                                             "Progressive 1");
                                                         votersText = votersText.Replace("United Future 2 Progressive",
                                                             "United Future 2; Progressive");
+                                                        votersText = votersText.Replace("United Future 8, Progressive",
+                                                            "United Future 8; Progressive");
 
                                                         // Fix for maori party bugs
                                                         votersText = votersText.Replace("Māori Party (Sharples) 1",
@@ -1388,6 +1410,23 @@ namespace ParliamentVotes.Managers.DataImport
                                                             "ACT New Zealand 2 (Roy, Douglas)");
                                                         votersText = votersText.Replace("Turner) ACT New Zealand",
                                                             "Turner); ACT New Zealand");
+                                                        votersText = votersText.Replace("ACT New Zealand 2, Progressive",
+                                                            "ACT New Zealand 2; Progressive");
+                                                        votersText = votersText.Replace("New Zealand First 13 ACT New Zealand",
+                                                            "New Zealand First 13; ACT New Zealand");
+
+                                                        // Fix national/nzfirst bug
+                                                        votersText = votersText.Replace("Wong, Worth) New Zealand First", 
+                                                            "Wong, Worth); New Zealand First");
+                                                        votersText = votersText.Replace("Shanks; Simich",
+                                                            "Shanks, Simich");
+                                                        votersText = votersText.Replace("New Zealand National 27 New Zealand First",
+                                                            "New Zealand National 27; New Zealand First");
+                                                        votersText = votersText.Replace("New Zealand First 13, Green Party",
+                                                            "New Zealand First 13; Green Party");
+
+                                                        votersText = votersText.Replace("Mahuta, Turia",
+                                                            "Mahuta; Turia");
 
                                                         string[] voters = votersText.Replace(".", "")
                                                             .Replace(":", ";").Split(";");
@@ -1402,7 +1441,7 @@ namespace ParliamentVotes.Managers.DataImport
                                                             {
                                                                 // Get the party name and the number of voters
                                                                 string partyName = partyMatch.Groups[1].Value
-                                                                    .Trim().Replace("’", "'");
+                                                                    .Trim().Replace("’", "'").Replace("`", "'");
                                                                 int partyNumbers =
                                                                     int.Parse(partyMatch.Groups[2].Value);
 
@@ -1445,7 +1484,7 @@ namespace ParliamentVotes.Managers.DataImport
                                                                 {
                                                                     // This is a split party vote, and needs to be treated accordingly
                                                                     var members = splitPartyVoteMatch.Groups[3]
-                                                                        .Value.Replace("’", "'").Split(", ");
+                                                                        .Value.Replace("’", "'").Replace("`", "'").Split(", ");
                                                                     List<Member> splitMembers = _db.Members
                                                                         .Where(m =>
                                                                             (members.Contains(m.LastName) ||
@@ -1459,9 +1498,7 @@ namespace ParliamentVotes.Managers.DataImport
                                                                                     t.End >= sittingDate)))
                                                                         .ToList();
 
-                                                                    await _db.SplitPartyVotes.AddRangeAsync(
-                                                                        splitMembers.Select(m =>
-                                                                            new SplitPartyVote(partyVote, m)));
+                                                                    partyVote.SplitPartyVotes.AddRange(splitMembers);
                                                                 }
 
                                                                 // Update the party vote accordingly
@@ -1476,7 +1513,7 @@ namespace ParliamentVotes.Managers.DataImport
                                                                 // Parse out the member name if it has a prefix
                                                                 var memberName =
                                                                     voter.Replace("Independent: ", "")
-                                                                        .Replace("Independent ", "").Replace("’", "'")
+                                                                        .Replace("Independent ", "").Replace("’", "'").Replace("`", "'")
                                                                         .Trim();
 
                                                                 // Find the member in the DB, by their last name, or alternately by their last name and their first initial
@@ -1654,11 +1691,12 @@ namespace ParliamentVotes.Managers.DataImport
                                     .Replace(" Dame ", " ")
                                     .Replace(" Hon ", " ").Replace(" Dr ", " ")
                                     .Replace(" Vui ", " ")
+                                    .Replace(" Luamanuvao ", " ")
                                     .Split(" in the name of ");
 
                                 if (memberNameMatch.Length > 1)
                                 {
-                                    var nameStart = memberNameMatch[1].Trim().ToLower().Replace("’", "'");
+                                    var nameStart = memberNameMatch[1].Trim().ToLower().Replace("’", "'").Replace("`", "'");
                                     amendMember = _db.Members.FirstOrDefault(m =>
                                         nameStart.StartsWith((m.FirstName + " " + m.LastName)
                                             .ToLower()) ||
@@ -1716,7 +1754,7 @@ namespace ParliamentVotes.Managers.DataImport
 
                                 // Remove any existing personal votes for this question
                                 var existingPersonalVotesVotes =
-                                    _db.PersonalVotes.Where(p => p.Question_Id == question.Id);
+                                    _db.PersonalVotes.Where(p => p.Question.Id == question.Id);
                                 _db.PersonalVotes.RemoveRange(existingPersonalVotesVotes);
 
                                 // Clear the description and clause
@@ -1794,11 +1832,16 @@ namespace ParliamentVotes.Managers.DataImport
                                                 .Replace("Teller", "").Trim();
                                             if (!string.IsNullOrEmpty(memberName))
                                             {
+                                                // Quick fix for te Heuheu
+                                                if (!memberName.Contains("(P)"))
+                                                    memberName = memberName.Replace("te Heuheu(P", "te Heuheu (P)");
+
                                                 var isProxy = memberName.Contains("(P)");
-                                                memberName = memberName.Replace("(P)", "").Replace("’", "'").Trim();
+                                                memberName = memberName.Replace("(P)", "").Replace("’", "'").Replace("`", "'").Replace(",", "").Trim();
                                                 
                                                 // Quick fix for H V Ross Robertson
                                                 memberName = memberName.Replace("Robertson H", "Robertson R");
+                                                memberName = memberName.Replace("Arden", "Ardern");
 
                                                 // Find the member in the DB, by their last name, or alternately by their last name and their first initial
                                                 var member = _db.Members.FirstOrDefault(m =>
@@ -1820,7 +1863,7 @@ namespace ParliamentVotes.Managers.DataImport
                                                 await _db.PersonalVotes.AddAsync(personalVote);
 
                                                 personalVote.Proxy = isProxy;
-                                                personalVote.Member_Id = member.Id;
+                                                personalVote.Member = member;
 
                                                 // Update the personal vote
                                                 personalVote.Update(question, lastPosition,
@@ -1918,7 +1961,7 @@ namespace ParliamentVotes.Managers.DataImport
 
             if (memberNameMatch.Length > 1)
             {
-                var nameStart = memberNameMatch[1].Trim().ToLower().Replace("’", "'");
+                var nameStart = memberNameMatch[1].Trim().ToLower().Replace("’", "'").Replace("`", "'");
                 amendMember = _db.Members.FirstOrDefault(m =>
                     nameStart.StartsWith((m.FirstName + " " + m.LastName).ToLower()) ||
                     nameStart.StartsWith(m.AlsoKnownAs.ToLower()));
@@ -1970,7 +2013,7 @@ namespace ParliamentVotes.Managers.DataImport
 
             // See if this voice vote already exists
             VoiceVote vote =
-                _db.VoiceVotes.FirstOrDefault(v => v.Question_Id == question.Id);
+                _db.VoiceVotes.FirstOrDefault(v => v.Question.Id == question.Id);
 
             // If the vote doesn't exist, then we need to create a new one
             if (vote == null)
